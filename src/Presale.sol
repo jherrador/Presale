@@ -109,8 +109,6 @@ contract Presale is Ownable {
      * @dev Reverts if caller is blacklisted
      */
 
-      
-
     function buyWithERC20(address tokenUsedToBuy_, uint256 amount_) external {
         require(!blacklistedUsers[msg.sender], "User is blacklisted");
         require(block.timestamp >= startingTime, "Presale not started yet");
@@ -118,10 +116,11 @@ contract Presale is Ownable {
         require(totalSold < maxSellingAmount, "Sold out");
         require(amount_ > 0, "Amount cannot be zero");
 
-       uint256 price = _getPrice(whitelistedTokens[tokenUsedToBuy_].priceFeed, whitelistedTokens[tokenUsedToBuy_].threshold);
+        uint256 price =
+            _getPrice(whitelistedTokens[tokenUsedToBuy_].priceFeed, whitelistedTokens[tokenUsedToBuy_].threshold);
 
         (uint256 spentAmount, uint256 tokenAmountToReceive) = _getTokenAmountCurrentPhaseTokenBuy(amount_, price);
-       
+
         _checkCurrentPhase(tokenAmountToReceive);
 
         totalSold += tokenAmountToReceive;
@@ -131,8 +130,8 @@ contract Presale is Ownable {
         userTokenBalance[msg.sender] += tokenAmountToReceive;
 
         IERC20(tokenUsedToBuy_).safeTransferFrom(msg.sender, fundsReceiverAddress, spentAmount);
-
     }
+
     function buyWithEther() external payable {
         require(!blacklistedUsers[msg.sender], "User is blacklisted");
         require(block.timestamp >= startingTime, "Presale not started yet");
@@ -142,7 +141,7 @@ contract Presale is Ownable {
 
         uint256 price = _getPrice(etherPriceFeed.priceFeed, etherPriceFeed.threshold);
         (uint256 spentAmount, uint256 tokenAmountToReceive) = _getTokenAmountCurrentPhaseEtherBuy(msg.value, price);
-       
+
         _checkCurrentPhase(tokenAmountToReceive);
 
         totalSold += tokenAmountToReceive;
@@ -259,8 +258,12 @@ contract Presale is Ownable {
         IERC20(sellingTokenAddress).safeTransfer(msg.sender, amount);
     }
 
-    function getWhitelistedToken(address tokenAddress_) external view returns(bool, address, uint256){
-        return (whitelistedTokens[tokenAddress_].whitelisted, whitelistedTokens[tokenAddress_].priceFeed, whitelistedTokens[tokenAddress_].threshold);
+    function getWhitelistedToken(address tokenAddress_) external view returns (bool, address, uint256) {
+        return (
+            whitelistedTokens[tokenAddress_].whitelisted,
+            whitelistedTokens[tokenAddress_].priceFeed,
+            whitelistedTokens[tokenAddress_].threshold
+        );
     }
 
     function _getPrice(address priceFeed_, uint256 threshold_) internal view returns (uint256) {
@@ -272,21 +275,26 @@ contract Presale is Ownable {
         return price;
     }
 
-    function _getTokenAmountCurrentPhaseEtherBuy(uint256 amount_, uint256 price_) internal view returns(uint256, uint256){
+    function _getTokenAmountCurrentPhaseEtherBuy(uint256 amount_, uint256 price_)
+        internal
+        view
+        returns (uint256, uint256)
+    {
         uint256 usdValue = amount_ * price_ / 1e18;
         uint256 tokenAmountToReceive = usdValue * 1e6 / phases[currentPhase][1];
         uint256 finalAmount = amount_;
         uint256 remainingTokens = tokenAmountToReceive;
-        
-        
-        if (totalSold + tokenAmountToReceive > phases[currentPhase][0]){
-            if(currentPhase == 1)
-                remainingTokens = (phases[currentPhase][0] + phases[currentPhase-1][0]) - totalSold;
-            else if (currentPhase == 2)
-                remainingTokens = (phases[currentPhase][0] + phases[currentPhase-1][0]+ phases[currentPhase-2][0])  - totalSold;
-            else if(currentPhase == 0)
+
+        if (totalSold + tokenAmountToReceive > phases[currentPhase][0]) {
+            if (currentPhase == 1) {
+                remainingTokens = (phases[currentPhase][0] + phases[currentPhase - 1][0]) - totalSold;
+            } else if (currentPhase == 2) {
+                remainingTokens =
+                    (phases[currentPhase][0] + phases[currentPhase - 1][0] + phases[currentPhase - 2][0]) - totalSold;
+            } else if (currentPhase == 0) {
                 remainingTokens = phases[currentPhase][0] - totalSold;
-            
+            }
+
             uint256 finalAmountinUSD = remainingTokens * phases[currentPhase][1] / 1e6;
             finalAmount = finalAmountinUSD * 1e18 / price_;
         }
@@ -294,19 +302,25 @@ contract Presale is Ownable {
         return (finalAmount, remainingTokens);
     }
 
-    function _getTokenAmountCurrentPhaseTokenBuy(uint256 amount_, uint256 price_) internal view returns(uint256, uint256){
+    function _getTokenAmountCurrentPhaseTokenBuy(uint256 amount_, uint256 price_)
+        internal
+        view
+        returns (uint256, uint256)
+    {
         uint256 usdValue = amount_ * price_ / 1e18;
-        uint256 tokenAmountToReceive = usdValue * 1e18/ phases[currentPhase][1];
+        uint256 tokenAmountToReceive = usdValue * 1e18 / phases[currentPhase][1];
         uint256 finalAmount = amount_;
         uint256 remainingTokens = tokenAmountToReceive;
 
-        if (totalSold + tokenAmountToReceive > phases[currentPhase][0]){
-            if(currentPhase == 0)
+        if (totalSold + tokenAmountToReceive > phases[currentPhase][0]) {
+            if (currentPhase == 0) {
                 remainingTokens = phases[currentPhase][0] - totalSold;
-            else if(currentPhase == 1)
-                remainingTokens = (phases[currentPhase][0] + phases[currentPhase-1][0]) - totalSold;
-            else if (currentPhase == 2)
-                remainingTokens = (phases[currentPhase][0] + phases[currentPhase-1][0]+ phases[currentPhase-2][0])  - totalSold;
+            } else if (currentPhase == 1) {
+                remainingTokens = (phases[currentPhase][0] + phases[currentPhase - 1][0]) - totalSold;
+            } else if (currentPhase == 2) {
+                remainingTokens =
+                    (phases[currentPhase][0] + phases[currentPhase - 1][0] + phases[currentPhase - 2][0]) - totalSold;
+            }
 
             uint256 finalAmountinUSD = remainingTokens * phases[currentPhase][1] / 1e6;
             finalAmount = finalAmountinUSD * 1e6 / price_;
@@ -315,15 +329,20 @@ contract Presale is Ownable {
     }
 
     function _checkCurrentPhase(uint256 amount_) private {
-        if (currentPhase == 0 && totalSold + amount_ == phases[currentPhase][0])
+        if (currentPhase == 0 && totalSold + amount_ == phases[currentPhase][0]) {
             currentPhase++;
+        }
 
-        if (currentPhase == 1 && totalSold + amount_ == phases[currentPhase][0] + phases[currentPhase-1][0])
+        if (currentPhase == 1 && totalSold + amount_ == phases[currentPhase][0] + phases[currentPhase - 1][0]) {
             currentPhase++;
+        }
 
-        if (currentPhase == 2 && (block.timestamp > phases[currentPhase][2]) || (totalSold + amount_ == phases[0][0] + phases[1][0] + phases[2][0]))
+        if (
+            currentPhase == 2 && (block.timestamp > phases[currentPhase][2])
+                || (totalSold + amount_ == phases[0][0] + phases[1][0] + phases[2][0])
+        ) {
             currentPhase++;
-
+        }
     }
 
     receive() external payable {}

@@ -11,7 +11,6 @@ import "../src/Presale.sol";
 import "../src/PresaleToken.sol";
 import "../src/SecureChainlinkOracle.sol";
 
-
 contract PresaleTest is Test {
     using SafeERC20 for IERC20;
 
@@ -41,16 +40,16 @@ contract PresaleTest is Test {
 
         presaleToken = new PresaleToken("Sale Token", "ST");
         uint256 tokenDecimals = IERC20Metadata(address(presaleToken)).decimals();
-        maxSellingAmount = 9_000_000 * 10**tokenDecimals;
+        maxSellingAmount = 9_000_000 * 10 ** tokenDecimals;
 
         presaleToken.mint(maxSellingAmount);
 
         chainlinkOracle = new SecureChainlinkOracle();
         chainLinkOracleAddress = address(chainlinkOracle);
 
-        phases[0] = [3_000_000 * 10**tokenDecimals, 5000, block.timestamp + 6 hours];
-        phases[1] = [2_000_000 * 10**tokenDecimals, 500, block.timestamp + 6 hours];
-        phases[2] = [4_000_000 * 10**tokenDecimals, 200, block.timestamp + 12 hours];
+        phases[0] = [3_000_000 * 10 ** tokenDecimals, 5000, block.timestamp + 6 hours];
+        phases[1] = [2_000_000 * 10 ** tokenDecimals, 500, block.timestamp + 6 hours];
+        phases[2] = [4_000_000 * 10 ** tokenDecimals, 200, block.timestamp + 12 hours];
 
         presale = new Presale(
             fundsReceiverAddress,
@@ -63,25 +62,23 @@ contract PresaleTest is Test {
             etherPriceFeedAddress,
             etherPriceFeedTheshold
         );
-        
+
         IERC20(address(presaleToken)).approve(address(this), maxSellingAmount);
-        
+
         vm.stopPrank();
         IERC20(address(presaleToken)).safeTransferFrom(deployer, address(presale), maxSellingAmount);
         vm.startPrank(deployer);
         _addPermitedTokens();
         vm.stopPrank();
-        
     }
 
-    function testDeploy() public view{
+    function testDeploy() public view {
         assert(address(presaleToken) != address(0));
         assert(address(chainlinkOracle) != address(0));
         assert(address(presaleToken) != address(0));
         assert(address(presale) != address(0));
     }
 
-    
     function testAddWhitelistedTokenRevertTokenAdded() public {
         vm.startPrank(deployer);
         vm.expectRevert("TokenAddress already added");
@@ -111,7 +108,7 @@ contract PresaleTest is Test {
     function testRemoveWhitelistedToken() public {
         vm.startPrank(deployer);
         presale.removeWhitelistedToken(cbBTCTokenAddress);
-        (bool whitelisted1, , ) = presale.getWhitelistedToken(cbBTCTokenAddress);
+        (bool whitelisted1,,) = presale.getWhitelistedToken(cbBTCTokenAddress);
         assert(!whitelisted1);
         vm.stopPrank();
     }
@@ -153,7 +150,7 @@ contract PresaleTest is Test {
         presale.blacklist(address(0));
     }
 
-     function testRemoveBlacklist() public {
+    function testRemoveBlacklist() public {
         vm.startPrank(deployer);
         presale.blacklist(address(vm.addr(2)));
         assert(presale.blacklistedUsers(address(vm.addr(2))));
@@ -173,25 +170,23 @@ contract PresaleTest is Test {
         presale.removeBlacklist(address(vm.addr(2)));
     }
 
-
     function testBuyWithEtherCorrectly() public {
         uint256 buyAmount = 1 ether;
         address buyer = vm.addr(2);
-        
+
         vm.deal(buyer, 2 ether);
         _sellWithEth(buyAmount, buyer);
     }
 
     function testBuyWithEtherExceededCorrectly() public {
         uint256 buyAmount = 15 ether;
-        
+
         address buyer = makeAddr("buyer");
         vm.deal(buyer, 100 ether);
 
         uint256 initialPhase = presale.currentPhase();
         _sellWithEth(buyAmount, buyer);
         assert(presale.currentPhase() == initialPhase + 1);
-        
     }
 
     function testBuyWithEtherRevertMaxSellingAmount() public {
@@ -213,13 +208,13 @@ contract PresaleTest is Test {
     }
 
     function testBuyWithERC20AmountExceededCorrectly() public {
-        uint256 buyAmount = 20000 * ( 10 ** ERC20(usdcTokenAddress).decimals());
+        uint256 buyAmount = 20000 * (10 ** ERC20(usdcTokenAddress).decimals());
         address buyer = vm.addr(2);
         uint256 initialPhase = presale.currentPhase();
         vm.deal(buyer, 1 ether);
 
         vm.prank(buyer);
-        deal(address(usdcTokenAddress), buyer, 100000 * ( 10 ** ERC20(usdcTokenAddress).decimals()));
+        deal(address(usdcTokenAddress), buyer, 100000 * (10 ** ERC20(usdcTokenAddress).decimals()));
         _sellWithToken(usdcTokenAddress, buyAmount, buyer);
 
         assert(presale.userTokenBalance(address(buyer)) == phases[0][0]);
@@ -227,34 +222,34 @@ contract PresaleTest is Test {
     }
 
     function testBuyWithERC20AmountExceededTwoPhasesCorrectly() public {
-        uint256 buyAmount = 20000 * ( 10 ** ERC20(usdcTokenAddress).decimals());
+        uint256 buyAmount = 20000 * (10 ** ERC20(usdcTokenAddress).decimals());
         address buyer = vm.addr(2);
         uint256 initialPhase = presale.currentPhase();
         vm.deal(buyer, 1 ether);
 
         vm.prank(buyer);
-        deal(address(usdcTokenAddress), buyer, 100000 * ( 10 ** ERC20(usdcTokenAddress).decimals()));
+        deal(address(usdcTokenAddress), buyer, 100000 * (10 ** ERC20(usdcTokenAddress).decimals()));
         _sellWithToken(usdcTokenAddress, buyAmount, buyer);
-        _sellWithToken(usdcTokenAddress, buyAmount*5, buyer);
+        _sellWithToken(usdcTokenAddress, buyAmount * 5, buyer);
 
-        _sellWithToken(usdcTokenAddress, buyAmount*5, buyer);
+        _sellWithToken(usdcTokenAddress, buyAmount * 5, buyer);
 
         assert(presale.currentPhase() == initialPhase + 3);
     }
 
     function testBuyWithERC20RevertMaxSellingAmount() public {
-        uint256 buyAmount = 20000 * ( 10 ** ERC20(usdcTokenAddress).decimals());
+        uint256 buyAmount = 20000 * (10 ** ERC20(usdcTokenAddress).decimals());
         address buyer = vm.addr(2);
         uint256 initialPhase = presale.currentPhase();
         vm.deal(buyer, 1 ether);
 
         vm.prank(buyer);
-        deal(address(usdcTokenAddress), buyer, 100000 * ( 10 ** ERC20(usdcTokenAddress).decimals()));
+        deal(address(usdcTokenAddress), buyer, 100000 * (10 ** ERC20(usdcTokenAddress).decimals()));
         _sellWithToken(usdcTokenAddress, buyAmount, buyer);
-        _sellWithToken(usdcTokenAddress, buyAmount*5, buyer);
+        _sellWithToken(usdcTokenAddress, buyAmount * 5, buyer);
         assert(presale.currentPhase() == initialPhase + 2);
-        
-        _sellWithToken(usdcTokenAddress, buyAmount*5, buyer);
+
+        _sellWithToken(usdcTokenAddress, buyAmount * 5, buyer);
         assert(presale.currentPhase() == initialPhase + 3);
 
         vm.startPrank(buyer);
@@ -267,33 +262,31 @@ contract PresaleTest is Test {
     }
 
     function testBuyWithERC20Correctly() public {
-        uint256 buyAmount = 100 * ( 10 ** ERC20(usdcTokenAddress).decimals());
+        uint256 buyAmount = 100 * (10 ** ERC20(usdcTokenAddress).decimals());
         address buyer = vm.addr(2);
         vm.deal(buyer, 1 ether);
 
         vm.prank(buyer);
-        deal(address(usdcTokenAddress), buyer, 100000 * ( 10 ** ERC20(usdcTokenAddress).decimals()));
-        
+        deal(address(usdcTokenAddress), buyer, 100000 * (10 ** ERC20(usdcTokenAddress).decimals()));
+
         _sellWithToken(usdcTokenAddress, buyAmount, buyer);
     }
 
     function testBuyWithMultipleERC20Correctly() public {
-        uint256 usdcBuyAmount = 100 * ( 10 ** ERC20(usdcTokenAddress).decimals());
-        uint256 usdbcBuyAmount = 100 * ( 10 ** ERC20(usdbcTokenAddress).decimals());
+        uint256 usdcBuyAmount = 100 * (10 ** ERC20(usdcTokenAddress).decimals());
+        uint256 usdbcBuyAmount = 100 * (10 ** ERC20(usdbcTokenAddress).decimals());
         address buyer = vm.addr(2);
         vm.deal(buyer, 1 ether);
 
         vm.prank(buyer);
-        deal(address(usdcTokenAddress), buyer, 100000 * ( 10 ** ERC20(usdcTokenAddress).decimals()));
+        deal(address(usdcTokenAddress), buyer, 100000 * (10 ** ERC20(usdcTokenAddress).decimals()));
         _sellWithToken(usdcTokenAddress, usdcBuyAmount, buyer);
-        
-        
-        deal(address(usdbcTokenAddress), buyer, 100000 * ( 10 ** ERC20(usdbcTokenAddress).decimals()));
+
+        deal(address(usdbcTokenAddress), buyer, 100000 * (10 ** ERC20(usdbcTokenAddress).decimals()));
         _sellWithToken(usdbcTokenAddress, usdbcBuyAmount, buyer);
 
         assert(IERC20(usdcTokenAddress).balanceOf(address(fundsReceiverAddress)) >= usdcBuyAmount);
         assert(IERC20(usdbcTokenAddress).balanceOf(address(fundsReceiverAddress)) >= usdbcBuyAmount);
-        
     }
 
     function testEmergencyEtherWithdrawCorrectly() public {
@@ -318,22 +311,22 @@ contract PresaleTest is Test {
 
         vm.expectRevert("No pending balance to withdraw");
         presale.emergencyEtherWithdraw();
-        
+
         vm.stopPrank();
     }
 
     function testEmergencyERC20WithdrawCorrectly() public {
         address randomAddress = vm.addr(2);
-        uint256 transferredTokenAmount = 100 * ( 10 ** ERC20(usdcTokenAddress).decimals());
-        
+        uint256 transferredTokenAmount = 100 * (10 ** ERC20(usdcTokenAddress).decimals());
+
         assert(IERC20(usdcTokenAddress).balanceOf(address(presale)) == 0);
-        
-        deal(address(usdcTokenAddress), randomAddress, 100000 * ( 10 ** ERC20(usdcTokenAddress).decimals()));
-        
+
+        deal(address(usdcTokenAddress), randomAddress, 100000 * (10 ** ERC20(usdcTokenAddress).decimals()));
+
         vm.prank(randomAddress);
-        IERC20(usdcTokenAddress).approve(address(this), transferredTokenAmount*2);
+        IERC20(usdcTokenAddress).approve(address(this), transferredTokenAmount * 2);
         IERC20(usdcTokenAddress).safeTransferFrom(randomAddress, address(presale), transferredTokenAmount);
-        
+
         assert(IERC20(usdcTokenAddress).balanceOf(address(presale)) == transferredTokenAmount);
 
         vm.startPrank(deployer);
@@ -346,7 +339,7 @@ contract PresaleTest is Test {
     function testClaimCorrectly() public {
         uint256 buyAmount = 1 ether;
         address buyer = vm.addr(2);
-        
+
         vm.deal(buyer, 2 ether);
         _sellWithEth(buyAmount, buyer);
 
@@ -361,7 +354,7 @@ contract PresaleTest is Test {
     function testClaimRevertPresaleActive() public {
         uint256 buyAmount = 1 ether;
         address buyer = vm.addr(2);
-        
+
         vm.deal(buyer, 2 ether);
         _sellWithEth(buyAmount, buyer);
         vm.expectRevert("Presale not ended");
@@ -371,25 +364,25 @@ contract PresaleTest is Test {
 
     function testClaimRevertNoTokensAllocated() public {
         address buyer = vm.addr(2);
-        
+
         vm.warp(endingTime);
         vm.prank(buyer);
         vm.expectRevert("Zero tokens allocated");
-        
+
         presale.claim();
     }
 
     function testClaimRevertNotEnoughTokens() public {
         uint256 buyAmount = 1 ether;
         address buyer = vm.addr(2);
-        
+
         vm.deal(buyer, 2 ether);
         _sellWithEth(buyAmount, buyer);
 
         vm.startPrank(address(presale));
         ERC20(address(presaleToken)).transfer(vm.addr(1), maxSellingAmount);
         vm.stopPrank();
-        
+
         vm.warp(endingTime);
 
         vm.startPrank(buyer);
@@ -406,11 +399,11 @@ contract PresaleTest is Test {
         uint256 totalSoldBefore = presale.totalSold();
         uint256 tokenBalanceBefore = presale.userTokenBalance(address(buyer_));
         uint256 buyerEtherBefore = address(buyer_).balance;
-        
+
         vm.startPrank(buyer_);
         presale.buyWithEther{value: buyAmount_}();
         uint256 buyerEtherAfter = address(buyer_).balance;
-        
+
         uint256 tokenBalanceAfter = presale.userTokenBalance(address(buyer_));
         uint256 tokenAmountToReceive = tokenBalanceAfter - tokenBalanceBefore;
         uint256 amountSellingWei = buyerEtherBefore - buyerEtherAfter;
@@ -428,13 +421,13 @@ contract PresaleTest is Test {
         uint256 totalSoldBefore = presale.totalSold();
         uint256 tokenBalanceBefore = presale.userTokenBalance(address(buyer_));
         uint256 buyerTokensBefore = IERC20(token_).balanceOf(address(buyer_));
-        
+
         vm.startPrank(buyer_);
         IERC20(token_).approve(address(presale), buyAmount_);
 
         presale.buyWithERC20(token_, buyAmount_);
         uint256 buyerTokensAfter = IERC20(token_).balanceOf(address(buyer_));
-        
+
         uint256 tokenBalanceAfter = presale.userTokenBalance(address(buyer_));
         uint256 tokenAmountToReceive = tokenBalanceAfter - tokenBalanceBefore;
         uint256 amountSellingWei = buyerTokensBefore - buyerTokensAfter;
@@ -465,11 +458,10 @@ contract PresaleTest is Test {
         assert(whitelisted2);
         assert(priceFeed2 == 0x7e860098F58bBFC8648a4311b374B1D669a2bc6B);
         assert(threshold2 == 3 days);
-        
+
         (bool whitelisted3, address priceFeed3, uint256 threshold3) = presale.getWhitelistedToken(usdbcTokenAddress);
         assert(whitelisted3);
         assert(priceFeed3 == 0x7e860098F58bBFC8648a4311b374B1D669a2bc6B);
         assert(threshold3 == 3 days);
-        
     }
 }
